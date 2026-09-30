@@ -34,7 +34,7 @@ Dentro do container, execute:
 python -m company_agent "Qual e a capital do Brasil?"
 ```
 
-A pergunta e recebida pela interface de linha de comando e encaminhada ao agente. Para ver a ajuda do comando, execute `python -m company_agent --help`.
+A pergunta e recebida pela interface de linha de comando e encaminhada ao agente. O agente pode responder diretamente ou chamar as tools simuladas de documentos internos e banco de dados. Para ver a ajuda do comando, execute `python -m company_agent --help`.
 
 Digite `exit` para sair do terminal do container.
 
@@ -74,15 +74,21 @@ docker compose down
     `-- company_agent/
         |-- __init__.py
         |-- __main__.py
+        |-- bootstrap.py
         |-- cli.py
         |-- config.py
         |-- main.py
         |-- agent/
         |   |-- __init__.py
-        |   `-- company_agent.py
-        `-- llm/
+        |   |-- company_agent.py
+        |   `-- prompts.py
+        |-- llm/
+        |   |-- __init__.py
+        |   `-- ollama.py
+        `-- tools/
             |-- __init__.py
-            `-- ollama.py
+            |-- database_query.py
+            `-- document_search.py
 ```
 
 Dentro da rede criada pelo Compose, a aplicacao acessa o Ollama pelo endereco `http://ollama:11434`. O nome do servico, `ollama`, funciona como hostname interno.
