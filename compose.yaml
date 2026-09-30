@@ -1,0 +1,40 @@
+services:
+  app:
+    build:
+      context: .
+    command: tail -f /dev/null
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./src:/app/src
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app/src
+    depends_on:
+      ollama-pull:
+        condition: service_completed_successfully
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - ollama_data:/root/.ollama
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy
+    command: pull ${OLLAMA_MODEL:-llama3.2:3b}
+
+volumes:
+  ollama_data:
