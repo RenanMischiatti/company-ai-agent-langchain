@@ -22,6 +22,8 @@ docker compose up --build -d
 
 Na primeira execucao, o Compose tambem baixa automaticamente o modelo `llama3.2:3b`. O container `app` inicia depois que o download termina. Nas proximas execucoes, o modelo ja estara no volume persistente e essa verificacao sera mais rapida.
 
+O Compose tambem inicia PostgreSQL com a extensao pgvector e baixa o modelo de embeddings configurado no `.env`.
+
 O container `app` fica ativo para funcionar como ambiente de desenvolvimento. Entre nele com:
 
 ```bash
@@ -34,7 +36,31 @@ Dentro do container, execute:
 python -m company_agent "Qual e a capital do Brasil?"
 ```
 
-A pergunta e recebida pela interface de linha de comando e encaminhada ao agente. O agente pode responder diretamente ou chamar as tools simuladas de documentos internos e banco de dados. Para ver a ajuda do comando, execute `python -m company_agent --help`.
+A pergunta e recebida pela interface de linha de comando e encaminhada ao agente. O agente pode responder diretamente, consultar documentos pelo RAG ou chamar a tool ainda simulada de banco de dados. Para ver a ajuda do comando, execute `python -m company_agent --help`.
+
+## Indexar documentos para o RAG
+
+Inicialize o schema do banco uma vez:
+
+```bash
+docker compose exec app python -m company_agent.database
+```
+
+Depois, coloque arquivos `.txt` em `data/documents` e execute:
+
+```bash
+docker compose exec app python -m company_agent.rag
+```
+
+O comando separa os documentos por secoes, subdivide secoes grandes, gera embeddings no Ollama e sincroniza o documento e seus chunks no PostgreSQL.
+
+O PostgreSQL possui uma tabela `documents`, com a identidade e o hash dos arquivos, e uma tabela `document_chunks`, com os textos, metadados e vetores. A ingestao substitui apenas os chunks dos documentos processados.
+
+Depois da ingestao, consulte o agente normalmente:
+
+```bash
+docker compose exec app python -m company_agent "De acordo com os documentos internos, como funciona o trabalho remoto?"
+```
 
 Digite `exit` para sair do terminal do container.
 
@@ -78,6 +104,13 @@ docker compose down
         |-- cli.py
         |-- config.py
         |-- main.py
+        |-- database/
+        |   |-- __init__.py
+        |   |-- __main__.py
+        |   |-- connection.py
+        |   |-- document_repository.py
+        |   |-- schema.py
+        |   `-- schema.sql
         |-- agent/
         |   |-- __init__.py
         |   |-- company_agent.py
@@ -85,6 +118,15 @@ docker compose down
         |-- llm/
         |   |-- __init__.py
         |   `-- ollama.py
+        |-- rag/
+        |   |-- __init__.py
+        |   |-- __main__.py
+        |   |-- document_loader.py
+        |   |-- embeddings.py
+        |   |-- ingestion.py
+        |   |-- rag_service.py
+        |   |-- section_splitter.py
+        |   `-- vector_store.py
         `-- tools/
             |-- __init__.py
             |-- database_query.py
