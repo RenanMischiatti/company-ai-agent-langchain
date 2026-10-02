@@ -65,6 +65,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./src/company_agent/database/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+      - ./src/company_agent/database/seed.sql:/docker-entrypoint-initdb.d/002_seed.sql:ro
 
 volumes:
   ollama_data:
